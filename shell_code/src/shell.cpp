@@ -8,19 +8,30 @@
 
 #include "debug/DebugHelper.h"
 #include "internalcommands/CommandHolder.h"
-
-//Internal commands
-const char* changeDirectory = "cd";
+#include "parser/tokenizer/Tokenizer.h"
+#include "parser/tokenizer/helpers/TokenizerHelpers.h"
 
 int ProcessKernelCmd(std::vector<char*> arguments);
 bool Init();
-
-const bool enable_debug = true;
 
 //Dependencies
 CommandHolder cmdHolder;
 
 int main() {
+    std::string testLine;
+    while (true)
+    {
+        std::getline(std::cin, testLine);
+        if (testLine.empty())
+        {
+            continue;
+        }
+
+        Tokenizer tokenizer(testLine);
+        std::vector<Token> tokens = tokenizer.Tokenize();
+        TokenizerHelpers::PrintTokens(tokens);
+        return 0;
+    }
     
     if (!Init())
     {
@@ -75,6 +86,28 @@ int main() {
     //Psh completed
     return 0;
 }
+
+// void ParseUserInput(const std::string userInput, std::vector<std::string>& outCmds)
+// {
+//     std::string line;
+//     for (const char c : userInput)
+//     {
+//         if (arg == nullptr)
+//         {
+//             continue;
+//         }
+
+//         if (strcmp(arg, ";") == 0)
+//         {
+//             outCmds.push_back(line);
+//             line = "";
+//         }
+//         else
+//         {
+//             line
+//         }
+//     }
+// }
 
 int ProcessKernelCmd(std::vector<char*> arguments)
 {

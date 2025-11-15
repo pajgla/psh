@@ -14,7 +14,7 @@
         {
             "label": "run",
             "type": "shell",
-            "command": "${workspaceFolder}/psh",
+            "command": "${workspaceFolder}/build/psh",
             "dependsOn": ["build"],
             "group": {
                 "kind": "test",
