@@ -13,7 +13,6 @@
 const char* changeDirectory = "cd";
 
 int ProcessKernelCmd(std::vector<char*> arguments);
-void DebugPrint(const char* format, ...);
 bool Init();
 
 const bool enable_debug = true;
@@ -22,11 +21,17 @@ const bool enable_debug = true;
 CommandHolder cmdHolder;
 
 int main() {
-    Init();
+    
+    if (!Init())
+    {
+        DebugHelper::PrintError("An error occured. Closing psh...");
+        return -1;
+    }
 
     std::string line;
 
     while (true) {
+
         std::cout << "psh$ ";
 
         if (!std::getline(std::cin, line)) {
