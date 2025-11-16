@@ -5,6 +5,7 @@ namespace TokenizerHelpers
 {
     void PrintTokens(const std::vector<Token>& tokens)
     {
+        DebugHelper::PrintDebug("Printing tokens...");
         for (const Token& token : tokens)
         {
             const std::string tokenName = TokenTypeToString(token.m_TokenType);

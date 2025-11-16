@@ -10,29 +10,16 @@
 #include "internalcommands/CommandHolder.h"
 #include "parser/tokenizer/Tokenizer.h"
 #include "parser/tokenizer/helpers/TokenizerHelpers.h"
+#include "parser/Parser.h"
 
 int ProcessKernelCmd(std::vector<char*> arguments);
 bool Init();
+void ProcessParserTree(std::unique_ptr<ParserNode> root);
 
 //Dependencies
 CommandHolder cmdHolder;
 
-int main() {
-    std::string testLine;
-    while (true)
-    {
-        std::getline(std::cin, testLine);
-        if (testLine.empty())
-        {
-            continue;
-        }
-
-        Tokenizer tokenizer(testLine);
-        std::vector<Token> tokens = tokenizer.Tokenize();
-        TokenizerHelpers::PrintTokens(tokens);
-        return 0;
-    }
-    
+int main() {    
     if (!Init())
     {
         DebugHelper::PrintError("An error occured. Closing psh...");
@@ -53,61 +40,62 @@ int main() {
             continue;
         }
 
-        std::stringstream stringStream(line);
-        std::string token;
-        std::vector<char*> arguments;
+        //Tokenize
+        Tokenizer tokenizer(line);
+        std::vector<Token> tokens = tokenizer.Tokenize();
 
-        while (stringStream >> token) {
-            const char* ptrToken = token.c_str();
-            char* stringCopy = strdup(ptrToken);
-            arguments.push_back(stringCopy);
-        }
-
-        if (arguments.empty()) {
-            continue;
-        }
-
-        if (const InternalCommand* internalCmd = cmdHolder.FindInternalCommand(arguments[0]))
-        {
-            DebugHelper::PrintDebug("Processing internal cmd...");
-            internalCmd->Execute(arguments);
-        }
-        else
-        {
-            DebugHelper::PrintDebug("Processing kernel cmd...");
-            const int processReturn = ProcessKernelCmd(arguments);
-            if (processReturn != 0)
-            {
-                return processReturn;
-            }
-        }
+        //Parse
+        Parser parser(tokens);
+        auto rootNode = parser.Parse();
+        ProcessParserTree(std::move(rootNode));
     }
 
     //Psh completed
     return 0;
 }
 
-// void ParseUserInput(const std::string userInput, std::vector<std::string>& outCmds)
-// {
-//     std::string line;
-//     for (const char c : userInput)
-//     {
-//         if (arg == nullptr)
-//         {
-//             continue;
-//         }
+void ProcessParserTree(std::unique_ptr<ParserNode> root)
+{
+    if (root == nullptr)
+        return;
 
-//         if (strcmp(arg, ";") == 0)
-//         {
-//             outCmds.push_back(line);
-//             line = "";
-//         }
-//         else
-//         {
-//             line
-//         }
-//     }
-// }
+    if (root->m_ParserNodeType == ParserNodeType::Command)
+    {
+        if (root->m_Args.size() == 0)
+        {
+            DebugHelper::PrintError("Parser command node has empty args");
+            return;
+        }
+
+        const std::string& cmd = root->m_Args[0];
+        std::vector<char*> cArgs;
+        cArgs.reserve(root->m_Args.size());
+        for (auto& s : root->m_Args)
+        {
+            cArgs.push_back(s.data());
+        }
+
+        if (const InternalCommand* internalCmd = cmdHolder.FindInternalCommand(cmd.c_str()))
+        {
+            DebugHelper::PrintDebug("Processing internal cmd...");
+            internalCmd->Execute(cArgs);
+        }
+        else
+        {
+            DebugHelper::PrintDebug("Processing kernel cmd...");
+            const int processReturn = ProcessKernelCmd(cArgs);
+            if (processReturn != 0)
+            {
+                DebugHelper::PrintError("Kernel process returned error");
+            }
+        }
+    }
+    else if (root->m_ParserNodeType == ParserNodeType::Sequence)
+    {
+        ProcessParserTree(std::move(root->m_LeftNode));
+        ProcessParserTree(std::move(root->m_RightNode));
+    }
+}
 
 int ProcessKernelCmd(std::vector<char*> arguments)
 {
@@ -135,9 +123,9 @@ int ProcessKernelCmd(std::vector<char*> arguments)
     waitpid(pid, &status, 0);
     
     // Free allocated strings
-    for (char* a : arguments) {
-        free(a);
-    }
+    // for (char* a : arguments) {
+    //     free(a);
+    // }
 
     return 0;
 }
