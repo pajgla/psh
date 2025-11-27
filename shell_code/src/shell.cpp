@@ -43,6 +43,7 @@ int main() {
         //Tokenize
         Tokenizer tokenizer(line);
         std::vector<Token> tokens = tokenizer.Tokenize();
+        TokenizerHelpers::PrintTokens(tokens);
 
         //Parse
         Parser parser(tokens);
@@ -72,7 +73,8 @@ void ProcessParserTree(std::unique_ptr<ParserNode> root)
         cArgs.reserve(root->m_Args.size());
         for (auto& s : root->m_Args)
         {
-            cArgs.push_back(s.data());
+            //I had to use const cast to avoid using s.data()
+            cArgs.push_back(const_cast<char*>(s.c_str()));
         }
 
         if (const InternalCommand* internalCmd = cmdHolder.FindInternalCommand(cmd.c_str()))

@@ -2,7 +2,7 @@
 
 #include <cstdio>
 
-static constexpr bool ENABLED = false;
+static constexpr bool ENABLED = true;
 
 void DebugHelper::PrintDebug(const char* format, ...)
 {
